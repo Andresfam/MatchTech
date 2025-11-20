@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MatchTech Chatbot</title>
+  <link rel="stylesheet" href="../backend/css/style.css" />
+  <style>
+  
+    .typing-indicator {
+      background: rgba(255, 255, 255, 0.25);
+      padding: 12px 18px;
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 60px;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      animation: typingBlink 1.4s infinite both;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typingBlink {
+      0% { 
+        opacity: 0.2; 
+        transform: translateY(0); 
+      }
+      20% { 
+        opacity: 1; 
+        transform: translateY(-2px); 
+      }
+      100% { 
+        opacity: 0.2; 
+        transform: translateY(0); 
+      }
+    }
+  </style>
+</head>
+<body>
+
+
+  <div class="top-bar">
+    <button class="btn" onclick="window.location.href='login.html'">Iniciar sesión</button>
+    <button class="btn" onclick="window.location.href='register.html'">Registrarse</button>
+  </div>
+
+
+  <div class="main-content">
+    <h1 class="title">MatchTech</h1>
+    <p class="subtitle">Conectándote con tu nuevo mejor amigo</p>
+
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Empecemos con nuestra aventura..." />
+      <button id="sendBtn">Enviar</button>
+    </div>
+
+
+    <div class="chat-container oculto" id="chatContainer"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("✅ MAIN JS CARGADO CORRECTAMENTE");
+
+      const sendBtn = document.getElementById("sendBtn");
+      const userInput = document.getElementById("userInput");
+      const chatContainer = document.getElementById("chatContainer");
+      const mainContent = document.querySelector(".main-content");
+
+      if (!sendBtn || !userInput || !chatContainer || !mainContent) {
+        console.error("❌ ERROR: No se encontraron elementos del DOM");
+        return;
+      }
+
+      sendBtn.addEventListener("click", enviarMensaje);
+      userInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") enviarMensaje();
+      });
+
+      function formatMessage(texto) {
+        if (!texto) return "";
+        return texto
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*(.*?)\*/g, "<em>$1</em>")
+          .replace(/^- /gm, "• ")
+          .replace(/^(\d+)\. /gm, "$1. ")
+          .replace(/\n/g, "<br>");
+      }
+
+      function agregarMensaje(texto, tipo) {
+        const div = document.createElement("div");
+        div.className = tipo === "user" ? "message user" : "message bot";
+        div.innerHTML = `<div class="bubble">${formatMessage(texto)}</div>`;
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      function showTyping() {
+        const div = document.createElement("div");
+        div.id = "typingIndicator";
+        div.className = "message bot";
+        div.innerHTML = `
+          <div class="bubble">
+            <div class="typing-indicator">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        `;
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        console.log("🔵 Typing indicator agregado");
+      }
+
+      function hideTyping() {
+        const t = document.getElementById("typingIndicator");
+        if (t) t.remove();
+      }
+
+      async function enviarMensaje() {
+        const texto = userInput.value.trim();
+        if (!texto) return;
+
+        if (chatContainer.classList.contains("oculto")) {
+          mainContent.classList.add("chat-active");
+          chatContainer.classList.remove("oculto");
+          chatContainer.innerHTML = "";
+        }
+
+        agregarMensaje(texto, "user");
+        userInput.value = "";
+
+        showTyping();
+
+        try {
+          const res = await fetch("http://localhost:3000/api/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ mensaje: texto }),
+          });
+
+          const data = await res.json();
+          hideTyping();
+          agregarMensaje(data.respuesta || "⚠️ Respuesta vacía", "bot");
+
+        } catch (error) {
+          hideTyping();
+          agregarMensaje("❌ Error al conectar con el servidor: " + error.message, "bot");
+          setTimeout(() => {
+            agregarMensaje(
+              "¡Hola! Soy MatchTech. Parece que hay un problema de conexión con el servidor de IA.",
+              "bot"
+            );
+          }, 500);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

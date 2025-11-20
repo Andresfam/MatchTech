@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat - MatchTech</title>
+  <link rel="stylesheet" href="../backend/css/chats.css" />
+</head>
+<body>
+  <div class="app-container">
+
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <button class="new-chat-btn" id="newChatBtn">
+          <span>+</span> Nuevo chat
+        </button>
+      </div>
+      
+      <div class="chat-history" id="chatHistory">
+     
+      </div>
+      
+      <div class="user-profile">
+        <div class="user-info">
+          <span id="userName">Usuario</span>
+          <button id="logoutBtn">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-container">
+      <div class="chat-header">
+        <h2 id="currentChatTitle">Nuevo chat</h2>
+        <input type="text" id="chatTitleInput" class="chat-title-input" style="display: none;" />
+      </div>
+      
+      <div class="chat-messages" id="chatMessages">
+        <div class="welcome-message">
+          <h1>Bienvenido a MatchTech</h1>
+          <p>¿En qué puedo ayudarte hoy?</p>
+        </div>
+      </div>
+      
+      <div class="chat-input-container">
+        <div class="input-wrapper">
+          <input 
+            type="text" 
+            id="messageInput" 
+            placeholder="Escribe tu mensaje..." 
+            maxlength="500"
+          />
+          <button id="sendBtn">➤</button>
+        </div>
+        <p class="input-disclaimer">
+          MatchTech puede cometer errores. Verifica información importante.
+        </p>
+      </div>
+    </div>
+  </div>
+
+<script>
+    const API_URL = "http://localhost:3000";
+
+    let currentChatId = null;
+    let chats = [];
+    let isEditingTitle = false;
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) {
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('userName').textContent = user.usuario || user.nombre;
+
+
+    const newChatBtn = document.getElementById('newChatBtn');
+    const chatHistory = document.getElementById('chatHistory');
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const currentChatTitle = document.getElementById('currentChatTitle');
+    const chatTitleInput = document.getElementById('chatTitleInput');
+    const editTitleBtn = document.getElementById('editTitleBtn');
+    const saveTitleBtn = document.getElementById('saveTitleBtn');
+
+
+    document.addEventListener('DOMContentLoaded', loadUserChats);
+
+
+    async function loadUserChats() {
+      try {
+        const response = await fetch(`${API_URL}/api/chats/${user.id_usuario}`);
+        if (!response.ok) throw new Error("Error al cargar chats");
+
+        chats = await response.json();
+        renderChatList();
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+
+
+    function renderChatList() {
+      chatHistory.innerHTML = "";
+
+      chats.forEach(chat => {
+        const div = document.createElement("div");
+        div.classList.add("chat-item");
+        if (chat.id_chat === currentChatId) div.classList.add("active");
+
+       div.innerHTML = `
+                      <div class="chat-info" onclick="loadChat(${chat.id_chat})">
+                          <div class="chat-preview">${chat.titulo}</div>
+                          <div class="chat-date">${formatDate(chat.fecha_actualizado)}</div>
+                      </div>
+
+                      <div class="chat-options" onclick="toggleChatMenu(event, ${chat.id_chat})">
+                          ⋮
+                      </div>
+
+                      <div class="chat-menu" 
+                          id="menu-${chat.id_chat}" 
+                          style="display:none;" 
+                          onclick="event.stopPropagation()">
+                          
+                          <div class="chat-menu-item" onclick="renameChat(${chat.id_chat})">
+                              Renombrar
+                          </div>
+                          <div class="chat-menu-item" onclick="deleteChat(${chat.id_chat})">
+                              Eliminar
+                          </div>
+                          <div class="chat-menu-item" onclick="abrirCompartir(${chat.id_chat}, '${chat.titulo}')">
+                              Compartir
+                          </div>
+                      </div>
+                  `;
+        div.onclick = () => loadChat(chat.id_chat);
+        chatHistory.appendChild(div);
+      });
+    }
+
+
+    function toggleChatMenu(event, id_chat) {
+    event.stopPropagation(); 
+
+    document.querySelectorAll(".chat-menu").forEach(m => {
+        if (m.id !== `menu-${id_chat}`) m.style.display = "none";
+    });
+
+    const menu = document.getElementById(`menu-${id_chat}`);
+    menu.style.display = (menu.style.display === "block") ? "none" : "block";
+
+    }
+    document.addEventListener("click", () => {
+      document.querySelectorAll(".chat-menu").forEach(menu => {
+          menu.style.display = "none";
+      });
+    });
+
+    async function renameChat(id_chat) {
+        const nuevoTitulo = prompt("Nuevo nombre del chat:");
+        if (!nuevoTitulo) return;
+
+        await fetch(`${API_URL}/api/chats/${id_chat}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ titulo: nuevoTitulo })
+        });
+
+        const chat = chats.find(c => c.id_chat === id_chat);
+        chat.titulo = nuevoTitulo;
+
+        renderChatList();
+
+        if (currentChatId === id_chat) {
+            currentChatTitle.textContent = nuevoTitulo;
+        }
+    }
+    
+        async function deleteChat(id_chat) {
+        const ok = confirm("¿Seguro que deseas eliminar este chat?");
+        if (!ok) return;
+
+        await fetch(`${API_URL}/api/chats/${id_chat}`, {
+            method: "DELETE"
+        });
+
+        chats = chats.filter(c => c.id_chat !== id_chat);
+        renderChatList();
+
+        if (currentChatId === id_chat) {
+            currentChatId = null;
+            chatMessages.innerHTML = `
+                <div class="welcome-message">
+                    <h1>Bienvenido a MatchTech</h1>
+                    <p>¿En qué puedo ayudarte hoy?</p>
+                </div>
+            `;
+            currentChatTitle.textContent = "Nuevo chat";
+        }
+    }
+
+
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+    }
+
+
+    async function createNewChat() {
+      try {
+        const response = await fetch(`${API_URL}/api/chats`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id_usuario: user.id_usuario,
+            titulo: "Nuevo chat"
+          })
+        });
+
+        const newChat = await response.json();
+
+        chats.unshift({
+          id_chat: newChat.id_chat,
+          titulo: "Nuevo chat",
+          fecha_actualizado: new Date().toISOString()
+        });
+
+        renderChatList();
+        loadChat(newChat.id_chat);
+
+      } catch (error) {
+        console.error("Error creando chat:", error);
+      }
+    }
+
+
+
+    async function loadChat(chatId) {
+      currentChatId = chatId;
+      renderChatList();
+
+      try {
+        const response = await fetch(`${API_URL}/api/mensajes/${chatId}`);
+        if (!response.ok) throw new Error("Error al cargar mensajes");
+
+        const mensajes = await response.json();
+        renderMessages(mensajes);
+
+        const chat = chats.find(c => c.id_chat === chatId);
+        currentChatTitle.textContent = chat.titulo;
+        chatTitleInput.value = chat.titulo;
+
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+
+    function renderMessages(mensajes) {
+    chatMessages.innerHTML = "";
+
+    if (mensajes.length === 0) {
+      chatMessages.innerHTML = `
+        <div class="welcome-message">
+          <h1>Bienvenido a MatchTech</h1>
+          <p>¿En qué puedo ayudarte hoy?</p>
+        </div>
+      `;
+      return;
+    }
+
+    mensajes.forEach(msg => {
+      const div = document.createElement("div");
+      div.classList.add("message", `${msg.rol}-message`);
+      
+
+      const contenidoFormateado = formatMessage(msg.contenido);
+      
+      div.innerHTML = `
+        <div class="message-content">
+          <div class="message-text">${contenidoFormateado}</div>
+          <div class="message-time">${new Date(msg.fecha).toLocaleTimeString()}</div>
+        </div>
+      `;
+      chatMessages.appendChild(div);
+    });
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+
+  function formatMessage(texto) {
+    if (!texto) return '';
+    
+    return texto
+
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+
+      .replace(/^- /gm, '• ')
+
+      .replace(/^(\d+)\. /gm, '$1. ')
+
+      .replace(/\n/g, '<br>')
+
+      .replace(/  +/g, ' ');
+  }
+
+
+    function showTypingIndicator() {
+    const div = document.createElement("div");
+    div.id = "typingIndicator";
+    div.classList.add("message", "bot-message");
+
+    div.innerHTML = `
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    `;
+
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function removeTypingIndicator() {
+    const typing = document.getElementById("typingIndicator");
+    if (typing) typing.remove();
+  }
+
+  function appendUserMessage(text) {
+    const div = document.createElement("div");
+    div.classList.add("message", "user-message");
+
+    div.innerHTML = `
+        <div class="message-content">
+          <div class="message-text">${text}</div>
+          <div class="message-time">${new Date().toLocaleTimeString()}</div>
+        </div>
+    `;
+
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function appendBotMessage(text) {
+    const div = document.createElement("div");
+    div.classList.add("message", "bot-message");
+
+    div.innerHTML = `
+        <div class="message-content">
+          <div class="message-text">${formatMessage(text)}</div>
+          <div class="message-time">${new Date().toLocaleTimeString()}</div>
+        </div>
+    `;
+
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+    async function createChatIfNeeded() {
+    if (currentChatId) return currentChatId;
+
+    const response = await fetch(`${API_URL}/api/chats`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_usuario: user.id_usuario,
+        titulo: "Nuevo chat"
+      })
+    });
+
+    const newChat = await response.json();
+    currentChatId = newChat.id_chat;
+
+    chats.unshift({
+      id_chat: currentChatId,
+      titulo: "Nuevo chat",
+      fecha_actualizado: new Date().toISOString()
+    });
+
+    renderChatList();
+    await loadChat(currentChatId);
+
+    return currentChatId;
+  }
+
+  async function sendMessage() {
+    const contenido = messageInput.value.trim();
+    if (!contenido) return;
+
+    messageInput.value = "";
+
+    const chatId = await createChatIfNeeded();
+
+
+    appendUserMessage(contenido);
+
+
+    showTypingIndicator();
+
+    try {
+      const response = await fetch(`${API_URL}/api/mensajes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_chat: chatId,
+          contenido,
+          rol: "user"
+        })
+      });
+
+      const data = await response.json();
+
+
+      removeTypingIndicator();
+
+   
+      appendBotMessage(data.respuesta);
+
+ 
+      if (data.tituloChat) {
+        const chat = chats.find(c => c.id_chat === chatId);
+        chat.titulo = data.tituloChat;
+        currentChatTitle.textContent = data.tituloChat;
+        renderChatList();
+      }
+
+    } catch (error) {
+      removeTypingIndicator();
+      appendBotMessage("⚠️ Error al conectar con el servidor");
+    }
+  }
+
+
+    newChatBtn.onclick = createNewChat;
+    sendBtn.onclick = sendMessage;
+
+    messageInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    logoutBtn.onclick = () => {
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    };
+</script>
+
+<div id="shareModal" class="modal hidden">
+  <div class="modal-content">
+    <h2 id="shareTitle">Compartir chat</h2>
+
+    <label>Enviar por correo electrónico:</label>
+    <input type="email" id="shareEmail" placeholder="Ingresa tu correo">
+
+    <button id="sendEmailBtn" class="modal-btn">Enviar PDF por correo</button>
+
+    <hr>
+
+    <button id="downloadPdfBtn" class="modal-btn">Descargar como PDF</button>
+
+    <button id="closeModal" class="modal-close-btn">Cerrar</button>
+  </div>
+</div>
+
+<script>
+let chatIDSeleccionado = null;
+let chatTituloSeleccionado = "";
+
+function abrirCompartir(id_chat, titulo) {
+  
+  chatIDSeleccionado = id_chat;
+  chatTituloSeleccionado = titulo;
+
+  document.getElementById("shareTitle").innerText = `Compartir: ${titulo}`;
+  document.getElementById("shareModal").classList.remove("hidden");
+}
+
+function cerrarModal() {
+  document.getElementById("shareModal").classList.add("hidden");
+}
+
+function obtenerConversacion() {
+    const mensajes = document.querySelectorAll(".message .message-text, .messages .text, .message-text");
+
+    let texto = "";
+
+    mensajes.forEach(msg => {
+        if (msg.innerText.trim() !== "") {
+            texto += msg.innerText + "\n\n";
+        }
+    });
+
+    return texto.trim();
+}
+
+
+document.getElementById("downloadPdfBtn").addEventListener("click", async () => {
+
+  const contenido = obtenerConversacion();
+
+  const res = await fetch("http://localhost:3000/api/pdf", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      titulo: chatTituloSeleccionado,
+      contenido
+    })
+  });
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${chatTituloSeleccionado}.pdf`;
+  a.click();
+
+});
+
+
+document.getElementById("sendEmailBtn").addEventListener("click", async () => {
+
+  const email = document.getElementById("shareEmail").value.trim();
+
+  if (!email) {
+    alert("Ingresa un correo válido.");
+    return;
+  }
+
+  const contenido = obtenerConversacion();
+
+  await fetch("http://localhost:3000/api/enviarCorreo", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      email,
+      titulo: chatTituloSeleccionado,
+      contenido
+    })
+  });
+
+  alert("Correo enviado correctamente.");
+  cerrarModal();
+});
+
+</script>
+
+
+
+</body>
+</html>

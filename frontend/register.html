@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es" class="register-page">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro - MatchTech</title>
+  <link rel="stylesheet" href="../backend/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    .password-wrapper {
+      position: relative;
+    }
+    .toggle-pass {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 18px;
+      color: #444;
+    }
+  </style>
+</head>
+
+<body class="auth-bg">
+  <div class="auth-container">
+    <h1>Registro</h1>
+
+    <form id="registerForm">
+      <div class="auth-form-container">
+
+        <label>Usuario:</label>
+        <input type="text" id="usuario" name="usuario"
+              placeholder="Escribe tu usuario" required 
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+
+        <label>Nombre:</label>
+        <input type="text" id="nombre" name="nombre"
+              placeholder="Escribe tu nombre" required
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+
+        <label>Apellido:</label>
+        <input type="text" id="apellido" name="apellido"
+              placeholder="Escribe tu apellido" required
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+
+        <label>Correo:</label>
+        <input type="email" id="correo" name="correo"
+              placeholder="Escribe tu correo"
+              required autocomplete="off"
+              autocorrect="off" autocapitalize="off" spellcheck="false"
+              pattern="^[a-zA-Z0-9._%+-]+@(gmail\.com|hotmail\.com|outlook\.com)$"
+              title="El correo debe ser @gmail.com, @hotmail.com o @outlook.com" />
+
+        <label>Contraseña:</label>
+        <div class="password-wrapper">
+          <input type="password" id="contrasena" name="contrasena"
+                placeholder="Escribe tu contraseña" required
+                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          <span class="toggle-pass" onclick="togglePassword('contrasena', this)">👓</span>
+        </div>
+
+        <label>Verificar contraseña:</label>
+        <div class="password-wrapper">
+          <input type="password" id="confirmar_contrasena" name="confirmar_contrasena"
+                placeholder="Repite tu contraseña" required
+                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          <span class="toggle-pass" onclick="togglePassword('confirmar_contrasena', this)">👓</span>
+        </div>
+
+      </div>
+
+      <button type="submit" class="auth-btn">Registrarse</button>
+    </form>
+
+    <p class="auth-text">
+      ¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a>
+    </p>
+
+    <a href="index.html" class="back-home">⬅ Volver al chat</a>
+  </div>
+
+  <script>
+
+  function togglePassword(inputId, icon) {
+    const input = document.getElementById(inputId);
+
+    if (input.type === "password") {
+      input.type = "text";
+      icon.textContent = "🕶️";
+    } else {
+      input.type = "password";
+      icon.textContent = "👓";
+    }
+  }
+
+  document.getElementById('registerForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const usuario = document.getElementById('usuario').value.trim();
+    const nombre = document.getElementById('nombre').value.trim();
+    const apellido = document.getElementById('apellido').value.trim();
+    const correo = document.getElementById('correo').value.trim();
+
+    const correoValido = /^[a-zA-Z0-9._%+-]+@(gmail\.com|hotmail\.com|outlook\.com)$/.test(correo);
+    if (!correoValido) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Correo no válido',
+        text: 'Solo se permiten correos @gmail.com, @hotmail.com o @outlook.com',
+        confirmButtonColor: "#7B2CBF"
+      });
+      return;
+    }
+
+    const contrasena = document.getElementById('contrasena').value.trim();
+    const confirmarContrasena = document.getElementById('confirmar_contrasena').value.trim();
+
+    if (contrasena !== confirmarContrasena) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Contraseñas no coinciden',
+        text: 'Verifica que ambas contraseñas sean iguales',
+        confirmButtonColor: "#7B2CBF"
+      });
+      return;
+    }
+
+    const formData = { usuario, nombre, apellido, correo, contrasena };
+
+    fetch('http://localhost/pagina/backend/php/register.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+
+      if (data.status === 'error') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error en el registro',
+          text: data.message,
+          confirmButtonColor: "#7B2CBF"
+        });
+        return;
+      }
+          if (data.status === 'success') {
+
+            if (data.usuario.rol === "admin") {
+              localStorage.setItem("user", JSON.stringify(data.usuario));
+
+              Swal.fire({
+                icon: 'success',
+                title: 'Registro como administrador',
+                text: 'Bienvenido al panel de administración.',
+                confirmButtonColor: "#7B2CBF"
+              }).then(() => {
+                window.location.href = "admin_panel.html";
+              });
+              return;
+            }
+
+        localStorage.setItem("user", JSON.stringify(data.usuario));
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Registro exitoso',
+          text: `Bienvenido, ${data.usuario.nombre}!`,
+          confirmButtonColor: "#7B2CBF"
+        }).then(() => {
+          window.location.href = "dashboard.html";
+        });
+      }
+
+    })
+    .catch(error => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: 'No se pudo conectar con el servidor.',
+        confirmButtonColor: "#7B2CBF"
+      });
+    });
+
+  });
+  </script>
+
+</body>
+</html>

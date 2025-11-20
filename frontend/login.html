@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar sesión - MatchTech</title>
+  <link rel="stylesheet" href="../backend/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</head>
+<body class="auth-bg">
+  <div class="auth-container">
+    <h1>Inicio de sesión</h1>
+
+    <form id="loginForm">
+      <label>Usuario o Correo:</label>
+      <input type="text" id="login" name="login"
+             placeholder="Ingresa tu usuario o correo" required
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <label>Contraseña:</label>
+      <div class="password-wrapper">
+        <input type="password" id="password" placeholder="Escribe tu contraseña" required
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <span class="toggle-pass" onclick="togglePassword('password', this)">👓</span>
+      </div>
+
+      <button type="submit" class="auth-btn">Iniciar sesión</button>
+    </form>
+
+    <p class="auth-text">
+      ¿No tienes usuario? <a href="register.html">Regístrate gratis</a>
+    </p>
+
+    <p class="auth-text">
+  ¿Olvidaste tu contraseña?
+  <a href="#" onclick="abrirResetModal()">Haz clic aquí</a>
+  </p>
+
+    <a href="index.html" class="back-home">⬅ Volver al chat</a>
+  </div>
+
+<script>
+
+  document.getElementById("login").addEventListener("input", function () {
+    const value = this.value;
+
+    if (!value.includes("@")) {
+      this.setCustomValidity("");
+      return;
+    }
+
+    const regex = /^[a-zA-Z0-9._%+-]+@(gmail\.com|hotmail\.com|outlook\.com)$/;
+
+    if (!regex.test(value)) {
+      this.setCustomValidity("El correo debe ser @gmail.com, @hotmail.com o @outlook.com");
+    } else {
+      this.setCustomValidity("");
+    }
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = {
+      login: document.getElementById('login').value.trim(),
+      contrasena: document.getElementById('password').value.trim()
+    };
+
+    if (!formData.login || !formData.contrasena) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos vacíos',
+        text: 'Por favor completa usuario/correo y contraseña.',
+        confirmButtonColor: '#7B2CBF'
+      });
+      return;
+    }
+
+    fetch('/pagina/backend/php/login.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+
+      console.log('Respuesta del servidor:', data);
+
+      if (data.status === "banned") {
+        Swal.fire({
+          icon: 'error',
+          title: 'Cuenta suspendida',
+          text: 'Tu cuenta ha sido suspendida. Contacta soporte.',
+          confirmButtonColor: '#7B2CBF'
+        }).then(() => {
+          data.user.rol = "baneado";
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.location.href = "banned.html";
+        });
+        return;
+      }
+
+      if (data.status === "success") {
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Bienvenido',
+          text: 'Inicio de sesión exitoso.',
+          confirmButtonColor: '#7B2CBF',
+          timer: 1200,
+          showConfirmButton: false
+        });
+
+        data.user.rol = data.rol;
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        setTimeout(() => {
+          if (data.rol === "admin") {
+            window.location.href = "admin_panel.html";
+          } else {
+            window.location.href = "dashboard.html";
+          }
+        }, 1300);
+
+        return;
+      }
+      Swal.fire({
+        icon: 'error',
+        title: 'Credenciales incorrectas',
+        text: 'Usuario o contraseña incorrectos.',
+        confirmButtonColor: '#7B2CBF'
+      });
+
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: 'No se pudo conectar con el servidor.',
+        confirmButtonColor: '#7B2CBF'
+      });
+    });
+  });
+
+  function togglePassword(inputId, icon) {
+    let input = document.getElementById(inputId);
+
+    if (input.type === "password") {
+      input.type = "text";
+      icon.textContent = "🕶️";
+    } else {
+      input.type = "password";
+      icon.textContent = "👓";
+    }
+  }
+</script>
+
+  
+<style>
+  .modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+  }
+
+  .modal.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-content {
+    background: white;
+    width: 360px;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    transform: scale(.8);
+    opacity: 0;
+    transition: all .25s ease;
+  }
+
+  .modal.show .modal-content {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .modal-content h2 {
+    margin-bottom: 15px;
+    color: #2E0F52;
+  }
+
+  .modal-content label {
+    font-weight: bold;
+    display: block;
+    text-align: left;
+    margin-top: 10px;
+  }
+
+  .modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 8px;
+    border: 1px solid #aaa;
+    font-size: 15px;
+  }
+
+  .modal-btn {
+    background: #7B2CBF;
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: .2s;
+  }
+
+  .modal-btn:hover {
+    background: #9d4dff;
+  }
+
+  .modal-close-btn {
+    background: #888;
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+    cursor: pointer;
+  }
+
+  .password-wrapper {
+    position: relative;
+  }
+
+  .toggle-pass {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    color: #444;
+  }
+</style>
+
+<div id="resetPasswordModal" class="modal">
+  <div class="modal-content">
+
+    <h2>Restablecer contraseña</h2>
+
+    <label>Usuario:</label>
+    <input type="text" id="rp_usuario" placeholder="Tu usuario">
+
+    <label>Correo electrónico:</label>
+    <input type="email" id="rp_correo" placeholder="usuario@gmail.com">
+
+    <label>Nueva contraseña:</label>
+    <div class="password-wrapper">
+      <input type="password" id="rp_pass1" placeholder="Nueva contraseña">
+      <span class="toggle-pass" onclick="togglePassword('rp_pass1', this)">👓</span>
+    </div>
+
+    <label>Repetir contraseña:</label>
+    <div class="password-wrapper">
+      <input type="password" id="rp_pass2" placeholder="Repite la contraseña">
+      <span class="toggle-pass" onclick="togglePassword('rp_pass2', this)">👓</span>
+    </div>
+
+    <button id="btnResetPassword" class="modal-btn">Actualizar contraseña</button>
+    <button id="btnCloseResetModal" class="modal-close-btn">Cerrar</button>
+  </div>
+</div>
+
+
+<script>
+
+
+  function abrirResetModal() {
+    const modal = document.getElementById("resetPasswordModal");
+    modal.classList.add("show");
+  }
+
+  document.getElementById("btnCloseResetModal").addEventListener("click", () => {
+    const modal = document.getElementById("resetPasswordModal");
+    modal.classList.remove("show");
+  });
+
+
+
+  document.getElementById("login").addEventListener("input", function () {
+    const value = this.value;
+
+    if (!value.includes("@")) {
+      this.setCustomValidity("");
+      return;
+    }
+
+    const regex = /^[a-zA-Z0-9._%+-]+@(gmail\.com|hotmail\.com|outlook\.com)$/;
+
+    if (!regex.test(value)) {
+      this.setCustomValidity("El correo debe ser @gmail.com, @hotmail.com o @outlook.com");
+    } else {
+      this.setCustomValidity("");
+    }
+  });
+
+
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = {
+      login: document.getElementById('login').value.trim(),
+      contrasena: document.getElementById('password').value.trim()
+    };
+
+    if (!formData.login || !formData.contrasena) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos vacíos',
+        text: 'Por favor completa usuario/correo y contraseña.',
+        confirmButtonColor: '#7B2CBF'
+      });
+      return;
+    }
+
+    fetch('/pagina/backend/php/login.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+
+      if (data.status === "banned") {
+        Swal.fire({
+          icon: 'error',
+          title: 'Cuenta suspendida',
+          text: 'Tu cuenta ha sido suspendida.',
+          confirmButtonColor: '#7B2CBF'
+        }).then(() => {
+          data.user.rol = "baneado";
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.location.href = "banned.html";
+        });
+        return;
+      }
+
+      if (data.status === "success") {
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Bienvenido',
+          text: 'Inicio de sesión exitoso.',
+          timer: 1200,
+          showConfirmButton: false
+        });
+
+        data.user.rol = data.rol;
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        setTimeout(() => {
+          window.location.href = data.rol === "admin" 
+            ? "admin_panel.html" 
+            : "dashboard.html";
+        }, 1300);
+
+        return;
+      }
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Credenciales incorrectas',
+        text: 'Usuario o contraseña incorrectos.',
+        confirmButtonColor: '#7B2CBF'
+      });
+
+    })
+    .catch(error => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error del servidor',
+        text: error.message,
+        confirmButtonColor: '#7B2CBF'
+      });
+    });
+  });
+
+
+  document.getElementById("btnResetPassword").addEventListener("click", () => {
+
+    const usuario = document.getElementById("rp_usuario").value.trim();
+    const correo  = document.getElementById("rp_correo").value.trim();
+    const pass1   = document.getElementById("rp_pass1").value.trim();
+    const pass2   = document.getElementById("rp_pass2").value.trim();
+
+    if (!usuario || !correo || !pass1 || !pass2) {
+      Swal.fire({
+        icon: "warning",
+        title: "Campos incompletos",
+        text: "Debes llenar todos los campos.",
+        confirmButtonColor: "#7B2CBF"
+      });
+      return;
+    }
+
+    if (pass1 !== pass2) {
+      Swal.fire({
+        icon: "error",
+        title: "Contraseñas no coinciden",
+        text: "Debes repetir la contraseña correctamente.",
+        confirmButtonColor: "#7B2CBF"
+      });
+      return;
+    }
+
+    fetch("http://localhost/pagina/backend/php/reset_password.php", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ usuario, correo, pass1, pass2 })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+      if (data.status === "success") {
+        Swal.fire({
+          icon: "success",
+          title: "Contraseña actualizada",
+          text: "Ya puedes iniciar sesión.",
+          confirmButtonColor: "#7B2CBF"
+        });
+
+        document.getElementById("resetPasswordModal").classList.remove("show");
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.message,
+          confirmButtonColor: "#7B2CBF"
+        });
+      }
+
+    })
+    .catch(err => {
+      Swal.fire({
+        icon: "error",
+        title: "Error del servidor",
+        text: err.message,
+        confirmButtonColor: "#7B2CBF"
+      });
+    });
+  });
+
+  function togglePassword(inputId, icon) {
+    let input = document.getElementById(inputId);
+
+    if (input.type === "password") {
+      input.type = "text";
+      icon.textContent = "🕶️";
+    } else {
+      input.type = "password";
+      icon.textContent = "👓";
+    }
+  }
+</script>
+
+</body>
+</html>

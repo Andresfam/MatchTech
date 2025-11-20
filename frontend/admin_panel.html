@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador - MatchTech</title>
+
+    <style>
+        body {
+            background: #0e0e0e;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+        .admin-container {
+            width: 95%;
+            margin: auto;
+            margin-top: 30px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        #searchUser {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .panel {
+            display: flex;
+            gap: 20px;
+        }
+
+        .box {
+            background: #111;
+            padding: 20px;
+            border-radius: 12px;
+            height: 600px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+
+        .users-box { width: 30%; }
+        .chats-box { width: 30%; }
+        .messages-box { width: 40%; }
+
+        .item {
+            padding: 12px;
+            background: #1b1b1b;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border: 1px solid #333;
+            transition: 0.2s;
+        }
+
+        .item:hover {
+            background: #272727;
+        }
+
+        .actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .ban {
+            background: #ffb300;
+        }
+
+        .delete {
+            background: #d00000;
+            color: white;
+        }
+
+        .message {
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+        }
+
+        .user { background: #2c2c2c; border-left: 3px solid #00ff95; }
+        .bot  { background: #002b5c; border-left: 3px solid #1a75ff; }
+
+        .msg-actions {
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .small-btn {
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>Panel de Administrador</h1>
+
+            <button onclick="logout()" 
+                    style="padding:10px 15px; background:#d00000; color:white; border:none;
+                        border-radius:8px; cursor:pointer; font-weight:bold;">
+                Cerrar sesión
+            </button>
+        </div>
+
+
+    <input type="text" id="searchUser" placeholder="Buscar usuario...">
+
+    <div class="panel">
+
+        <div class="box users-box">
+            <h2>Usuarios</h2>
+            <div id="userList"></div>
+        </div>
+
+
+        <div class="box chats-box">
+            <h2>Chats</h2>
+            <div id="chatList"></div>
+        </div>
+
+        <div class="box messages-box">
+            <h2>Mensajes</h2>
+            <div id="messageList"></div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+
+    const loggedUser = JSON.parse(localStorage.getItem("user"));
+    if (!loggedUser || loggedUser.rol !== "admin") {
+        alert("Acceso denegado.");
+        window.location.href = "login.html";
+    }
+
+    function loadUsers() {
+        fetch("/pagina/backend/php/get_users.php")
+            .then(res => res.json())
+            .then(users => {
+                const el = document.getElementById("userList");
+                el.innerHTML = "";
+
+                users.forEach(u => {
+                    const div = document.createElement("div");
+                    div.className = "item";
+                    div.innerHTML = `
+                        <strong>${u.usuario}</strong> (${u.correo})<br>
+                        Rol: ${u.rol}
+                        <div class="actions">
+                            <button class="ban" onclick="banUser(${u.id_usuario}, '${u.rol}'); event.stopPropagation();">
+                                ${u.rol === "baneado" ? "Desbanear" : "Banear"}
+                            </button>
+                            <button class="delete" onclick="deleteUser(${u.id_usuario}); event.stopPropagation();">Eliminar</button>
+                        </div>
+                    `;
+
+                    div.onclick = () => loadChats(u.id_usuario);
+                    el.appendChild(div);
+                });
+            });
+    }
+
+    document.getElementById("searchUser").addEventListener("keyup", function () {
+        const txt = this.value.toLowerCase();
+        document.querySelectorAll(".users-box .item").forEach(item => {
+            item.style.display = item.textContent.toLowerCase().includes(txt) ? "block" : "none";
+        });
+    });
+
+
+    function loadChats(id_usuario) {
+        fetch(`/pagina/backend/php/get_chats.php?id_usuario=${id_usuario}`)
+            .then(res => res.json())
+            .then(chats => {
+                const el = document.getElementById("chatList");
+                el.innerHTML = "";
+
+                if (chats.length === 0) {
+                    el.innerHTML = "<p>No hay chats.</p>";
+                    return;
+                }
+
+                chats.forEach(chat => {
+                    const div = document.createElement("div");
+                    div.className = "item";
+                    div.innerHTML = `
+                        <strong>${chat.titulo}</strong>
+                        <div class="actions">
+                            <button class="delete" onclick="deleteChat(${chat.id_chat}); event.stopPropagation();">Eliminar chat</button>
+                        </div>
+                    `;
+                    div.onclick = () => loadMessages(chat.id_chat);
+                    el.appendChild(div);
+                });
+            });
+    }
+
+    function loadMessages(id_chat) {
+        fetch(`/pagina/backend/php/get_messages.php?id_chat=${id_chat}`)
+            .then(res => res.json())
+            .then(msgs => {
+                const el = document.getElementById("messageList");
+                el.innerHTML = "";
+
+                msgs.forEach(m => {
+                    const div = document.createElement("div");
+                    div.className = `message ${m.rol}`;
+                    div.innerHTML = `
+                        <strong>${m.rol === "bot" ? "🤖 Bot" : "👤 Usuario"}</strong>
+                        <br>${m.contenido}
+                        <br><small>${m.fecha}</small>
+                        <div class="msg-actions">
+                            <button class="small-btn delete" onclick="deleteMessage(${m.id_mensaje}); event.stopPropagation();">
+                                Eliminar mensaje
+                            </button>
+                        </div>
+                    `;
+                    el.appendChild(div);
+                });
+
+                if (msgs.length === 0) {
+                    el.innerHTML = "<p>No hay mensajes.</p>";
+                }
+            });
+    }
+
+    function banUser(id, currentRole) {
+        fetch("/pagina/backend/php/ban_user.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id_usuario: id})
+        })
+        .then(r => r.json())
+        .then(data => {
+            alert("Nuevo estado: " + data.new_rol);
+            loadUsers();
+        });
+    }
+
+    function deleteUser(id) {
+        if (!confirm("¿Eliminar usuario permanentemente?")) return;
+
+        fetch("/pagina/backend/php/delete_user.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id_usuario: id})
+        })
+        .then(r => r.json())
+        .then(data => {
+            alert("Usuario eliminado.");
+            loadUsers();
+            document.getElementById("chatList").innerHTML = "";
+            document.getElementById("messageList").innerHTML = "";
+        });
+    }
+
+    function deleteChat(id_chat) {
+        if (!confirm("¿Eliminar chat completo?")) return;
+
+        fetch("/pagina/backend/php/delete_chat.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id_chat})
+        })
+        .then(r => r.json())
+        .then(() => {
+            alert("Chat eliminado.");
+            document.getElementById("messageList").innerHTML = "";
+            loadUsers();
+        });
+    }
+
+    function deleteMessage(id_mensaje) {
+        if (!confirm("¿Eliminar mensaje?")) return;
+
+        fetch("/pagina/backend/php/delete_message.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id_mensaje})
+        })
+        .then(r => r.json())
+        .then(() => {
+            alert("Mensaje eliminado.");
+            const selectedChat = document.querySelector(".chats-box .item.selected");
+            if (selectedChat) loadMessages(selectedChat.dataset.id);
+        });
+    }
+
+    loadUsers();
+    
+        function logout() {
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+</script>
+
+</body>
+</html>

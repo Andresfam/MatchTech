@@ -1,0 +1,539 @@
+/* Fuente moderna */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+/* Fondo general */
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(to bottom right, #6a5acd, #8a2be2, #ff69b4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.oculto {
+  display: none;
+}
+
+/* Barra superior */
+.top-bar {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  padding: 20px 40px;
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+.btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease, transform 0.2s ease;
+  margin-left: 10px;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+/* Contenido principal */
+.main-content {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.5s ease;
+  padding-top: 80px;
+  box-sizing: border-box;
+}
+
+/* Estado inicial: contenido centrado */
+.main-content:not(.chat-active) {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding-top: 0;
+}
+
+/* Cuando el chat está activo */
+.main-content.chat-active {
+  justify-content: flex-start;
+  padding-top: 80px;
+}
+
+/* Título */
+.title {
+  font-size: 4rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, #fff, #ffb6ff, #b794f4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: glow 3s ease-in-out infinite alternate;
+  transition: all 0.5s ease;
+}
+
+.chat-active .title {
+  display: none;
+}
+
+/* Subtítulo */
+.subtitle {
+  font-size: 1.3rem;
+  font-style: italic;
+  color: #f8f8f8;
+  margin-bottom: 40px;
+  opacity: 0.9;
+  letter-spacing: 0.5px;
+  transition: all 0.5s ease;
+}
+
+.chat-active .subtitle {
+  display: none;
+}
+
+/* Input */
+.input-area {
+  display: flex;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  padding: 15px;
+  backdrop-filter: blur(8px);
+  transition: all 0.5s ease;
+  width: 90%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Estado inicial: input centrado */
+.main-content:not(.chat-active) .input-area {
+  margin: 20px auto 40px auto;
+}
+
+/* Estado chat activo: input fijo abajo */
+.main-content.chat-active .input-area {
+  position: fixed;
+  bottom: 20px;
+  left: 5%;
+  right: 5%;
+  width: 90%;
+  max-width: none;
+  margin: 0;
+  transform: none;
+}
+
+.input-area input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 1.1rem;
+  padding: 10px;
+}
+
+.input-area input::placeholder {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.input-area button {
+  background: white;
+  color: #7b2cbf;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.input-area button:hover {
+  background: #f0e8ff;
+  transform: scale(1.05);
+}
+
+/* CHAT: inicialmente oculto pero con espacio real */
+.chat-container {
+  flex: 1;
+  display: none; /* Ahora sí se oculta realmente */
+  flex-direction: column;
+  padding: 0 40px;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Cuando se activa el chat, aparece y toma altura real */
+.chat-active .chat-container {
+  display: flex;
+  max-height: calc(100vh - 180px);
+  padding: 20px 40px;
+  margin-bottom: 100px;
+}
+
+
+/* Mensajes */
+.message {
+  padding: 15px 20px;
+  border-radius: 20px;
+  margin: 8px 0;
+  max-width: 80%;
+  word-wrap: break-word;
+  animation: fadeInUp 0.5s ease;
+  box-sizing: border-box;
+}
+
+.message.user {
+  background: rgba(255, 255, 255, 0.9);
+  color: #7b2cbf;
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.message.bot {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  align-self: flex-start;
+}
+
+
+/* ========== ESTILOS PARA LOGIN Y REGISTER ========== */
+
+/* Fondo para auth pages */
+.auth-bg {
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to bottom right, #6a5acd, #8a2be2, #ff69b4);
+  font-family: "Poppins", sans-serif;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Contenedor auth - BASE PARA AMBOS */
+.auth-container {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 35px 40px;
+  border-radius: 20px;
+  color: white;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: fadeInUp 0.8s ease;
+  margin: auto;
+}
+
+/* ========== LOGIN (SIN SCROLL) ========== */
+/* Login usa la estructura base sin modificaciones */
+
+/* ========== REGISTER (CON SCROLL INTERNO) ========== */
+/* Solo aplica a register.html */
+
+.register-page .auth-form-container {
+  flex: 1;
+  overflow-y: auto; /* SCROLL INTERNO */
+  padding-right: 10px;
+  margin-bottom: 10px;
+  max-height: calc(66vh - 200px); /* ALTURA MÁXIMA CALCULADA */
+}
+
+/* Scrollbar personalizado SOLO para register */
+.register-page .auth-form-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.register-page .auth-form-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.register-page .auth-form-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.register-page .auth-form-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Estilos comunes para ambos */
+.auth-container h1 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 26px;
+  font-weight: bold;
+  background: linear-gradient(90deg, #fff, #ffb6ff, #b794f4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  flex-shrink: 0;
+}
+
+.auth-container label {
+  margin-top: 15px;
+  font-weight: 600;
+  font-size: 14px;
+  display: block;
+}
+
+.auth-container input {
+  margin-top: 6px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #4c1d95;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auth-container input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.auth-container input::placeholder {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.auth-btn {
+  margin-top: 25px;
+  background: white;
+  color: #7b2cbf;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  font-size: 15px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.auth-btn:hover {
+  background: #f3e8ff;
+  transform: scale(1.02);
+}
+
+.auth-text {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.auth-text a {
+  color: white;
+  font-weight: 600;
+  text-decoration: underline;
+  transition: opacity 0.3s;
+  font-size: 14px;
+}
+
+.auth-text a:hover {
+  opacity: 0.8;
+}
+
+/* Social icons */
+.auth-social {
+  text-align: center;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.auth-social p {
+  margin-bottom: 15px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.auth-social .social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.auth-social img {
+  width: 22px;
+  height: 22px;
+  filter: invert(1);
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.3s;
+  opacity: 0.8;
+}
+
+.auth-social img:hover {
+  transform: scale(1.2);
+  opacity: 1;
+}
+
+/* Botón volver */
+.back-home {
+  display: inline-block;
+  margin-top: 20px;
+  text-align: center;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 12px 20px;
+  border-radius: 12px;
+  transition: all 0.3s;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.back-home:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.02);
+}
+
+/* Scrollbar personalizado para el chat */
+.chat-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.chat-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Animaciones */
+@keyframes glow {
+  from {
+    text-shadow: 0 0 10px #fff, 0 0 20px #e5b3fe, 0 0 30px #b794f4;
+  }
+  to {
+    text-shadow: 0 0 20px #fff, 0 0 30px #e5b3fe, 0 0 50px #a855f7;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-title {
+  animation: fadeInUp 1s ease forwards, glow 3s ease-in-out infinite alternate;
+}
+
+.animate-subtitle {
+  animation: fadeInUp 1.5s ease forwards;
+}
+
+.animate-input {
+  animation: fadeInUp 2s ease forwards;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .main-content.chat-active .input-area {
+    left: 2%;
+    right: 2%;
+    width: 96%;
+    bottom: 10px;
+  }
+  
+  .chat-active .chat-container {
+    padding: 10px 20px;
+    margin-bottom: 90px;
+  }
+  
+  .message {
+    max-width: 90%;
+    padding: 12px 16px;
+  }
+  
+  .top-bar {
+    padding: 15px 20px;
+  }
+
+    /* Contenedor de la burbuja */
+  .bubble {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Responsive para auth pages */
+  .auth-container {
+    padding: 30px 25px;
+    margin: 15px;
+    max-width: 380px;
+  }
+  
+  /* Responsive para register */
+  body:has(.register-page) .auth-container {
+    max-height: 80vh;
+  }
+  
+  .register-page .auth-form-container {
+    max-height: calc(80vh - 180px);
+  }
+  
+  .auth-container h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .auth-social .social-icons {
+    gap: 12px;
+  }
+  
+  .auth-social img {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .auth-container input {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  .auth-btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
