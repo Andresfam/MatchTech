@@ -1,0 +1,108 @@
+
+# Variables de entorno
+.env
+*.env
+/javascript/.env
+/backend/.env
+/backend/php/.env
+/config/.env
+.env.local
+.env.*.local
+node_modules/
+/node_modules/
+
+
+# Claves API por error
+*apikey*
+*api_key*
+*api-key*
+*APIKEY*
+*.pem
+*.key
+
+#############################
+#   NODE.JS
+#############################
+
+/javascript/node_modules/
+/node_modules/
+/npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+.pnpm-debug.log
+dist/
+build/
+.cache/
+temp/
+
+#############################
+#   PHP
+#############################
+
+/vendor/
+/backend/php/vendor/
+/backend/php/composer.lock
+
+#############################
+#   ARCHIVOS GENERADOS
+#############################
+
+*.log
+logs/
+*.tmp
+tmp/
+.DS_Store
+Thumbs.db
+*.bak
+*.old
+*.swp
+
+#############################
+#   SISTEMA / IDE
+#############################
+
+# VSCode
+.vscode/
+.history/
+
+# Mac / Windows meta
+.DS_Store
+Thumbs.db
+
+#############################
+#   FRONTEND
+#############################
+
+/pagina/frontend/cache/
+/pagina/frontend/temp/
+.cache/
+.sass-cache/
+*.map
+
+#############################
+#   PRODUCCIÓN / BUILD
+#############################
+
+/out/
+/dist/
+/build/
+/coverage/
+
+#############################
+#   PDF / EXPORTS
+#############################
+
+/*.pdf
+/backend/pdf_temp/
+/pdf_temp/
+
+#############################
+#   ARCHIVOS MANUALES
+#############################
+
+# Evitar exportar copias accidentales
+*copy*
+*respaldo*
+*backup*
